@@ -1,0 +1,15 @@
+#define stdout_addr $@STDOUT_ADDRESS@
+#define grid_iter $@GRID_ITERATOR@
+#define key_input_location $@CHAR_INPUT@
+#define interrupt_data $@INTERRUPT_ADDRESS@
+#define tileset_start $@TILESET_ORIGIN@
+#define tileset_height $@TILE_HEIGHT@
+#define ts_space_start @TILESET_SPACE_START_ASM@
+#define grid_height $@GRID_HEIGHT@
+#define grid_width $@GRID_WIDTH@
+#define display_start $@DISPLAY_ORIGIN@
+#define display_end @DISPLAY_END_ASM@
+#define ram_start $@RAM_ORIGIN@
+#define ram_size $@RAM_SIZE@
+#define grid_mask_h $@GRID_MASK_H@
+#define grid_mask_l $@GRID_MASK_L@

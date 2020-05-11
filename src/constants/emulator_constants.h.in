@@ -1,0 +1,22 @@
+static const size_t s_c_color_depth = 0x@COLOR_DEPTH@;
+static const size_t s_c_foreground_color = 0x@FOREGROUND_COLOR@;
+static const size_t s_c_background_color = 0x@BACKGROUND_COLOR@;
+
+static const size_t s_c_max_byte = 0x@MAX_BYTE_VALUE@;
+static const size_t s_c_memory_size = 0x@MEMORY_SIZE@;
+static const size_t s_c_grid_height = 0x@GRID_HEIGHT@;
+static const size_t s_c_grid_width = 0x@GRID_WIDTH@;
+static const size_t s_c_grid_size = @GRID_SIZE_C@;
+static const size_t s_c_stack_top = 0x@STACK_TOP@;
+static const size_t s_c_stack_size = 0x@STACK_SIZE@;
+static const size_t s_c_ram_orig = 0x@RAM_ORIGIN@;
+static const size_t s_c_ram_size = 0x@RAM_SIZE@;
+static const size_t s_c_tile_width = 0x@TILE_WIDTH@;
+static const size_t s_c_tile_height = 0x@TILE_HEIGHT@;
+static const size_t s_c_stdout_addr = 0x@STDOUT_ADDRESS@;
+static const size_t s_c_grid_iter_addr = 0x@GRID_ITERATOR@;
+static const size_t s_c_char_input_addr = 0x@CHAR_INPUT@;
+static const size_t s_c_interrupt_addr = 0x@INTERRUPT_ADDRESS@;
+static const size_t s_c_tileset_orig = 0x@TILESET_ORIGIN@;
+static const size_t s_c_tileset_size = @TILESET_SIZE_C@;
+static const size_t s_c_display_orig = 0x@DISPLAY_ORIGIN@;
