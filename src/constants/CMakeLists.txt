@@ -43,8 +43,8 @@ set(DISPLAY_END_ASM "\$${DISPLAY_ORIGIN} + (${DISPLAY_SIZE_ASM})")
 
 set(TILESET_SPACE_START_ASM "\$${TILESET_ORIGIN} + (' ' * ${SIZEOF_TILE_ASM})")
 
-configure_file(${CMAKE_SOURCE_DIR}/src/constants/emulator_constants.h.in
-	       ${CMAKE_SOURCE_DIR}/src/emulator/emulator_constants.h)
+configure_file(${PROJ_DIR}/src/constants/emulator_constants.h.in
+	       ${PROJ_DIR}/src/emulator/emulator_constants.h)
 
-configure_file(${CMAKE_SOURCE_DIR}/src/constants/assembler_constants.asm.in
-	       ${CMAKE_SOURCE_DIR}/src/assembler/assembler_constants.asm)
+configure_file(${PROJ_DIR}/src/constants/assembler_constants.asm.in
+	       ${PROJ_DIR}/src/assembler/assembler_constants.asm)
