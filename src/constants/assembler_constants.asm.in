@@ -1,9 +1,11 @@
 #define stdout_addr $@STDOUT_ADDRESS@
+#define percistence_addr $@PERC_ADDRESS@
 #define grid_iter $@GRID_ITERATOR@
 #define key_input_location $@CHAR_INPUT@
 #define interrupt_data $@INTERRUPT_ADDRESS@
 #define tileset_start $@TILESET_ORIGIN@
 #define tileset_height $@TILE_HEIGHT@
+#define tileset_width @TILE_WIDTH_ASM@
 #define ts_space_start @TILESET_SPACE_START_ASM@
 #define grid_height $@GRID_HEIGHT@
 #define grid_width $@GRID_WIDTH@

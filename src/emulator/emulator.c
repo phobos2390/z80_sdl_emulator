@@ -21,7 +21,7 @@ static uint8_t interrupt_data;
 static SDL_Surface* p_sdl_tileset_picture;
 static SDL_Renderer *p_sdl_renderer;
 
-static char tileset[s_c_max_byte][s_c_tile_height];
+static char tileset[s_c_max_byte][s_c_tile_height][s_c_tile_width_bytes];
 
 static char display_grid[s_c_grid_size];
 
@@ -116,6 +116,8 @@ uint8_t stack [s_c_stack_size];
 
 uint8_t ram [s_c_ram_size];
 
+uint32_t percistence_file_descriptor;
+
 void set_pixel(SDL_Surface* surface, uint32_t x, uint32_t y, uint32_t pixel)
 {
   uint32_t *target_pixel = (uint32_t*)
@@ -128,7 +130,7 @@ void set_pixel(SDL_Surface* surface, uint32_t x, uint32_t y, uint32_t pixel)
 
 void init_tileset()
 {
-    p_sdl_tileset_picture = SDL_CreateRGBSurface(0, s_c_max_byte * s_c_tile_width , s_c_tile_height, s_c_color_depth, 0, 0, 0, 0);
+    p_sdl_tileset_picture = SDL_CreateRGBSurface(0, s_c_max_byte * s_c_tile_width_pixels, s_c_tile_height, s_c_color_depth, 0, 0, 0, 0);
 
     if (p_sdl_tileset_picture == NULL) 
     {
@@ -173,20 +175,47 @@ void set_tileset_character(char character)
     else
     {
         uint8_t ucharacter = character;
-        size_t character_offset = ucharacter * s_c_tile_width;
+        size_t character_offset = ucharacter * s_c_tile_width_bytes;
         for(uint32_t i = 0; i < s_c_tile_height; i++)
         {
-            uint32_t character_row = tileset[ucharacter][i];
-            for(uint32_t j = 0; j < s_c_tile_width; j++)
+            if(s_c_tile_width == s_c_bits_in_byte)
             {
-                uint32_t r = (s_c_tile_width - 1) - j;
-                uint8_t pixel = ((character_row & (0x1 << r)) >> r);
-                uint32_t pixel_value = s_c_background_color;
-                if(pixel)
+                for(uint32_t j = 0; j < s_c_tile_width; j++)
                 {
-                    pixel_value = s_c_foreground_color;
+                    uint32_t pixel_value = 0;
+                    uint32_t row_index = j / s_c_bits_in_byte;
+                    uint32_t r = (s_c_tile_width - 1) - j;
+
+                    uint8_t pixel = ((tileset[ucharacter][i][row_index] & (0x1 << r)) >> r);
+                    pixel_value = s_c_background_color;
+                    if(pixel)
+                    {
+                        pixel_value = s_c_foreground_color;
+                    }
+                    set_pixel(p_sdl_tileset_picture, j + character_offset, i, pixel_value);
                 }
-                set_pixel(p_sdl_tileset_picture, j + character_offset, i, pixel_value);
+            }
+            else if(s_c_tile_width == s_c_bits_in_byte * s_c_bits_in_byte)
+            {
+                for(uint32_t j = 0; j < s_c_tile_width_bytes; j++)
+                {
+                    uint32_t pixel_value = 0;
+                    uint32_t row_index = j;
+                    uint32_t r = (s_c_tile_width - 1) - j;
+
+                    uint32_t bit_pixel_value [] = 
+                    {
+                        0x00, 0x55, 0xAA, 0xFF
+                    };
+                    
+                    uint8_t pixel = tileset[ucharacter][i][j]; 
+                    uint32_t alpha = (bit_pixel_value[(0xC0 & pixel) >> 6] << 24);
+                    uint32_t red =   (bit_pixel_value[(0x30 & pixel) >> 4] << 16);
+                    uint32_t green = (bit_pixel_value[(0x0C & pixel) >> 2] << 8);
+                    uint32_t blue =   bit_pixel_value[(0x03 & pixel)];
+                    pixel_value = alpha | red | green | blue;
+                    set_pixel(p_sdl_tileset_picture, j + character_offset, i, pixel_value);
+                }
             }
         }
     }
@@ -203,15 +232,15 @@ void screen_refresh()
         for(size_t j = 0; j < s_c_grid_width; j++)
         {
             SDL_Rect dest_rect;
-            dest_rect.w = s_c_tile_width;
+            dest_rect.w = s_c_tile_width_pixels;
             dest_rect.h = s_c_tile_height;
-            dest_rect.x = j * s_c_tile_width;
+            dest_rect.x = j * s_c_tile_width_pixels;
             dest_rect.y = i * s_c_tile_height;
             uint8_t ucharacter = display_grid[i * s_c_grid_width + j];
             SDL_Rect src_rect;
-            src_rect.w = s_c_tile_width;
+            src_rect.w = s_c_tile_width_pixels;
             src_rect.h = s_c_tile_height;
-            src_rect.x = ucharacter * s_c_tile_width;
+            src_rect.x = ucharacter * s_c_tile_width_pixels;
             src_rect.y = 0;
             SDL_RenderCopy( p_sdl_renderer
                           , p_sdl_tileset_texture
@@ -239,12 +268,12 @@ void write_cb(void* context, zuint16 address, zuint8 value)
     if(((s_c_stack_top - s_c_stack_size) < address)
      && (address <= s_c_stack_top))
     {
-        //printf("Writing to stack %x %x\n", address, value);
+//        printf("Writing to stack %x %x\n", address, value);
         stack[s_c_stack_top - address] = value;
     }
     else if(address == s_c_stdout_addr)
     {
-        //printf("'%c'\n", value);
+//        printf("'%c'\n", value);
         display_grid[grid_iter++] = value;
         screen_refresh();
 	grid_iter = (grid_iter % s_c_grid_size);
@@ -276,9 +305,11 @@ void write_cb(void* context, zuint16 address, zuint8 value)
          && (address < (s_c_tileset_size + s_c_tileset_orig)))
     {
         zuint16 tile_value =  address - s_c_tileset_orig;
-        zuint16 character = tile_value / s_c_tile_height;
-        zuint16 character_row = tile_value % s_c_tile_width;
-        tileset[character][character_row] = value;
+        zuint16 character = tile_value / (s_c_tile_height * s_c_tile_width_bytes);
+        zuint16 row_col = tile_value % (s_c_tile_height * s_c_tile_width_bytes);
+        zuint16 character_row = row_col / s_c_tile_height;
+        zuint16 character_pix = row_col % s_c_tile_height;
+        tileset[character][character_row][character_pix] = value;
         set_tileset_character(character);
     }
     else if((s_c_display_orig <= address)
@@ -286,6 +317,12 @@ void write_cb(void* context, zuint16 address, zuint8 value)
     {
         display_grid[address - s_c_display_orig] = value;
         screen_refresh();
+    }
+    else if(s_c_percistence_addr == address)
+    {
+        char char_value [sizeof(uint8_t)];
+        char_value[0] = value;
+        write(percistence_file_descriptor, char_value, sizeof(value));
     }
     fflush(stdout);
 }
@@ -448,6 +485,11 @@ int main(int argc, char** argv)
         {
             read_binary(argv[1], instructions, s_c_memory_size);
 
+            if(argc > 2)
+            {
+                percistence_file_descriptor = open(argv[2], O_RDWR | O_CREAT);
+            }
+            
             Z80 z80;
             z80.context = &z80;
             z80.write = &write_cb;
@@ -540,6 +582,7 @@ int main(int argc, char** argv)
                     {
                         z80_run(&z80, 1);
                     }
+                    write_tileset("build/tileset.png");
                 }
                 if(initializing == FALSE)
                 {
@@ -549,6 +592,11 @@ int main(int argc, char** argv)
                 }
             }
         }       
+        
+        if(argc > 2)
+        {
+            close(percistence_file_descriptor);
+        }
         
         write_tileset("tileset.png");
 
