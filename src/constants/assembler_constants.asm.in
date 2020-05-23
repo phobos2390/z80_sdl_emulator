@@ -6,6 +6,7 @@
 #define tileset_start $@TILESET_ORIGIN@
 #define tileset_height $@TILE_HEIGHT@
 #define tileset_width @TILE_WIDTH_ASM@
+#define tileset_width_bytes @TILE_WIDTH_BYTES_ASM@
 #define ts_space_start @TILESET_SPACE_START_ASM@
 #define grid_height $@GRID_HEIGHT@
 #define grid_width $@GRID_WIDTH@

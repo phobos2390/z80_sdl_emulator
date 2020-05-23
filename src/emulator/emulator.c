@@ -298,8 +298,8 @@ void write_cb(void* context, zuint16 address, zuint8 value)
     else if((s_c_ram_orig <= address) 
          && (address < (s_c_ram_size + s_c_ram_orig)))
     {
-//	printf("0x%x: 0x%x RAM WRITE\n", address, value);
         ram[address - s_c_ram_orig] = value;
+//        printf("0x%x: 0x%x RAM WRITE\n", address, value);
     }
     else if((s_c_tileset_orig <= address)
          && (address < (s_c_tileset_size + s_c_tileset_orig)))
@@ -378,6 +378,7 @@ zuint8 read_cb(void* context, zuint16 address)
      && (address <= s_c_stack_top))
     {
         read_value = stack[s_c_stack_top - address];
+//        printf("Reading value from stack %x %x\n", address, read_value);
     }
     else if((s_c_ram_orig <= address) 
          && (address < (s_c_ram_size + s_c_ram_orig)))
@@ -401,6 +402,24 @@ zuint8 read_cb(void* context, zuint16 address)
     {
         read_value = display_grid[address - s_c_display_orig];
     }
+    else if((s_c_tileset_orig <= address)
+        && (address < (s_c_tileset_size + s_c_tileset_orig)))
+    {
+        zuint16 tile_value =  address - s_c_tileset_orig;
+        zuint16 character = tile_value / (s_c_tile_height * s_c_tile_width_bytes);
+        zuint16 row_col = tile_value % (s_c_tile_height * s_c_tile_width_bytes);
+        zuint16 character_row = row_col / s_c_tile_height;
+        zuint16 character_pix = row_col % s_c_tile_height;
+        read_value = tileset[character][character_row][character_pix];
+//        printf("Reading tileset %c (%x), %x, %x (%x) has %x\n"
+//              , character
+//              , character
+//              , character_row
+//              , character_pix
+//              , address
+//              , read_value);
+    }
+    
     fflush(stdout);
     return read_value;
 }
@@ -439,7 +458,7 @@ void read_binary(char* filename, uint8_t* instruct, size_t memory_size)
 
 int main(int argc, char** argv)
 {
-    int width = s_c_grid_width * s_c_tile_width;
+    int width = s_c_grid_width * s_c_tile_width_pixels;
     int height = s_c_grid_height * s_c_tile_height;
     int depth = 32;
     
