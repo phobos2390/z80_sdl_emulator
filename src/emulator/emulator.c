@@ -16,6 +16,7 @@ static uint8_t halted = 0;
 static uint8_t continuing;
 static uint16_t grid_iter;
 static uint8_t char_input;
+static uint8_t tick_value;
 static uint8_t interrupt_data;
 
 static SDL_Surface* p_sdl_tileset_picture;
@@ -24,6 +25,20 @@ static SDL_Renderer *p_sdl_renderer;
 static char tileset[s_c_max_byte][s_c_tile_height][s_c_tile_width_bytes];
 
 static char display_grid[s_c_grid_size];
+
+struct sprite
+{
+    uint8_t m_y;
+    uint8_t m_x;
+    uint8_t m_character;
+    uint8_t m_flags;
+}__attribute__((packed));
+
+static uint8_t sprite_visible = 0x80;
+static uint8_t sprite_flipped_vertical = 0x40;
+static uint8_t sprite_flipped_horizontal = 0x20;
+
+static struct sprite sprite_table[s_c_number_of_sprites];
 
 static char* instruction_names[s_c_max_byte] = {
 /*    0            1         2          3           4        5      6           7     8          9         A          B         C          D         E        F */
@@ -130,7 +145,15 @@ void set_pixel(SDL_Surface* surface, uint32_t x, uint32_t y, uint32_t pixel)
 
 void init_tileset()
 {
-    p_sdl_tileset_picture = SDL_CreateRGBSurface(0, s_c_max_byte * s_c_tile_width_pixels, s_c_tile_height, s_c_color_depth, 0, 0, 0, 0);
+    p_sdl_tileset_picture = SDL_CreateRGBSurface( 0
+                                                , ( s_c_max_byte
+                                                  * s_c_tile_width_pixels)
+                                                , s_c_tile_height
+                                                , s_c_color_depth
+                                                , 0x00FF0000
+                                                , 0x0000FF00
+                                                , 0x000000FF
+                                                , 0xFF000000);
 
     if (p_sdl_tileset_picture == NULL) 
     {
@@ -226,6 +249,9 @@ void screen_refresh()
     SDL_Texture *p_sdl_tileset_texture 
         = SDL_CreateTextureFromSurface(p_sdl_renderer, p_sdl_tileset_picture);
     
+    SDL_SetTextureBlendMode(p_sdl_tileset_texture, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawBlendMode(p_sdl_renderer, SDL_BLENDMODE_BLEND);
+    
     SDL_RenderClear(p_sdl_renderer);
     for(size_t i = 0; i < s_c_grid_height; i++)
     {
@@ -246,6 +272,43 @@ void screen_refresh()
                           , p_sdl_tileset_texture
                           ,&src_rect
                           ,&dest_rect);
+        }
+    }
+    for(size_t i = 0; i < s_c_number_of_sprites; i++)
+    {
+        if((sprite_table[i].m_flags & sprite_visible) != 0)
+        {
+            SDL_Rect src_rect;
+            src_rect.w = s_c_tile_width_pixels;
+            src_rect.h = s_c_tile_height;
+            src_rect.x = sprite_table[i].m_character * s_c_tile_width_pixels;
+            src_rect.y = 0;
+            
+            SDL_Rect dst_rect;
+            dst_rect.w = s_c_tile_width_pixels;
+            dst_rect.h = s_c_tile_height;
+            dst_rect.x = sprite_table[i].m_x;
+            dst_rect.y = sprite_table[i].m_y;
+            
+            SDL_RendererFlip flip = SDL_FLIP_NONE;
+            
+            if(sprite_table[i].m_flags & sprite_flipped_horizontal)
+            {
+                flip |= SDL_FLIP_HORIZONTAL;
+            }
+            
+            if(sprite_table[i].m_flags & sprite_flipped_vertical)
+            {
+                flip |= SDL_FLIP_VERTICAL;
+            }
+
+            SDL_RenderCopyEx( p_sdl_renderer
+                            , p_sdl_tileset_texture
+                            ,&src_rect
+                            ,&dst_rect
+                            , 0
+                            , NULL
+                            , flip);
         }
     }
     SDL_RenderPresent(p_sdl_renderer);
@@ -275,7 +338,7 @@ void write_cb(void* context, zuint16 address, zuint8 value)
     {
 //        printf("'%c'\n", value);
         display_grid[grid_iter++] = value;
-        screen_refresh();
+//        screen_refresh();
 	grid_iter = (grid_iter % s_c_grid_size);
     }
     else if( (s_c_grid_iter_addr <= address)
@@ -311,12 +374,46 @@ void write_cb(void* context, zuint16 address, zuint8 value)
         zuint16 character_pix = row_col % s_c_tile_height;
         tileset[character][character_row][character_pix] = value;
         set_tileset_character(character);
+//        printf("Writing character data: %x, %x, %x, %x \n"
+//              , character
+//              , character_row
+//              , character_pix
+//              , value);
     }
     else if((s_c_display_orig <= address)
          && (address < (s_c_display_orig + s_c_grid_size)))
     {
         display_grid[address - s_c_display_orig] = value;
-        screen_refresh();
+//        screen_refresh();
+    }
+    else if( (s_c_tick_value_addr <= address) 
+          && (address < s_c_tick_value_addr + sizeof(tick_value)))
+    {
+        tick_value = value;
+    }
+    else if( (s_c_sprite_table_start <= address)
+          && (address < s_c_sprite_table_finish))
+    {
+        uint16_t raw_address = address - s_c_sprite_table_start;
+        uint16_t sprite_number = raw_address / s_c_sprite_size_bytes;
+        uint16_t attribute = raw_address % s_c_sprite_size_bytes;
+        switch(attribute)
+        {
+            case 0:
+                sprite_table[sprite_number].m_y = value;
+                break;
+            case 1:
+                sprite_table[sprite_number].m_x = value;
+                break;
+            case 2:
+                sprite_table[sprite_number].m_character = value;
+                break;
+            case 3:
+                sprite_table[sprite_number].m_flags = value;
+                break;
+            default:
+                break;
+        }
     }
     else if(s_c_percistence_addr == address)
     {
@@ -397,6 +494,11 @@ zuint8 read_cb(void* context, zuint16 address)
 //        printf("char input: '%c'\n", char_input);
         read_value = char_input;
     }
+    else if( (s_c_tick_value_addr <= address) 
+          && (address < s_c_tick_value_addr + sizeof(tick_value)))
+    {
+        read_value = tick_value;
+    }
     else if((s_c_display_orig <= address)
          && (address < (s_c_display_orig + s_c_grid_size)))
     {
@@ -419,7 +521,30 @@ zuint8 read_cb(void* context, zuint16 address)
 //              , address
 //              , read_value);
     }
-    
+    else if( (s_c_sprite_table_start <= address)
+          && (address < (s_c_sprite_table_finish)))
+    {
+        uint16_t raw_address = address - s_c_sprite_table_start;
+        uint16_t sprite_number = raw_address / s_c_sprite_size_bytes;
+        uint16_t attribute = raw_address % s_c_sprite_size_bytes;
+        switch(attribute)
+        {
+            case 0:
+                read_value = sprite_table[sprite_number].m_y;
+                break;
+            case 1:
+                read_value = sprite_table[sprite_number].m_x;
+                break;
+            case 2:
+                read_value = sprite_table[sprite_number].m_character;
+                break;
+            case 3:
+                read_value = sprite_table[sprite_number].m_flags;
+                break;
+            default:
+                break;
+        }
+    }
     fflush(stdout);
     return read_value;
 }
@@ -456,6 +581,29 @@ void read_binary(char* filename, uint8_t* instruct, size_t memory_size)
     close(fd);
 }
 
+volatile static uint8_t s_time_event_pushed = 0;
+
+Uint32 emulator_timer(Uint32 interval, void * param)
+{
+    SDL_Event event;
+    SDL_UserEvent userevent;
+
+    userevent.type = SDL_USEREVENT;
+    userevent.code = 0;
+    userevent.data1 = &emulator_timer;
+    userevent.data2 = param;
+
+    event.type = SDL_USEREVENT;
+    event.user = userevent;
+    
+    if(s_time_event_pushed == 0)
+    {
+        SDL_PushEvent(&event);
+        s_time_event_pushed = 1;
+    }
+    return(interval);
+}
+
 int main(int argc, char** argv)
 {
     int width = s_c_grid_width * s_c_tile_width_pixels;
@@ -464,10 +612,13 @@ int main(int argc, char** argv)
     
     memset(tileset, 0, s_c_max_byte * s_c_tile_height);
     memset(display_grid, 0, s_c_grid_size);
+    memset(sprite_table, 0, sizeof(sprite_table));
     
+    s_time_event_pushed = 0;
+
     init_tileset();
     
-    int32_t error = SDL_Init(SDL_INIT_VIDEO);
+    int32_t error = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     
     if(error == 0)
     {
@@ -477,11 +628,12 @@ int main(int argc, char** argv)
                                              , width
                                              , height
                                              , 0);
-
+        
         p_sdl_renderer = SDL_CreateRenderer( window
                                            , -1
                                            , SDL_RENDERER_SOFTWARE);
         SDL_SetRenderDrawColor(p_sdl_renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawBlendMode(p_sdl_renderer, SDL_BLENDMODE_BLEND);
         SDL_RenderClear(p_sdl_renderer);
         SDL_RenderPresent(p_sdl_renderer);
 
@@ -497,6 +649,7 @@ int main(int argc, char** argv)
         halted = FALSE;
         continuing = TRUE;
         grid_iter = 0;
+        tick_value = 0;
         
         uint32_t iterations = 0;
 
@@ -521,6 +674,8 @@ int main(int argc, char** argv)
             z80_power(&z80, TRUE);
             z80_reset(&z80);
 
+            SDL_AddTimer(200, emulator_timer, &z80);
+
             uint8_t initializing = TRUE;
             
             while( continuing == TRUE
@@ -529,6 +684,18 @@ int main(int argc, char** argv)
                 while(SDL_PollEvent(&event)) 
                 {
                     uint8_t key_entered = FALSE;
+                    if(event.type == SDL_USEREVENT)
+                    {
+                        s_time_event_pushed = 0;
+                        ++tick_value;
+                        halted = FALSE;
+                        z80_int(&z80, TRUE);
+                        while(halted == FALSE)
+                        {
+                            z80_run(&z80, 1);
+                        }
+                        screen_refresh();
+                    }
                     if (event.type == SDL_QUIT) 
                     {
                         printf("SDL_QUIT\n");
@@ -586,6 +753,7 @@ int main(int argc, char** argv)
                         {
                             z80_run(&z80, 1);
                         }
+                        s_time_event_pushed = 0;
                     }
                 }
                 if(halted == FALSE)
@@ -601,13 +769,13 @@ int main(int argc, char** argv)
                     {
                         z80_run(&z80, 1);
                     }
-                    write_tileset("build/tileset.png");
+//                    write_tileset("build/tileset.png");
                 }
                 if(initializing == FALSE)
                 {
-                    screen_refresh();
-                    SDL_RenderPresent(p_sdl_renderer);
-                    SDL_Delay(10);
+                    //screen_refresh();
+                    //SDL_RenderPresent(p_sdl_renderer);
+                    //SDL_Delay(10);
                 }
             }
         }       

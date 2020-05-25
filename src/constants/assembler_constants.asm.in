@@ -2,6 +2,7 @@
 #define percistence_addr $@PERC_ADDRESS@
 #define grid_iter $@GRID_ITERATOR@
 #define key_input_location $@CHAR_INPUT@
+#define tick_value $@TICK_VALUE@
 #define interrupt_data $@INTERRUPT_ADDRESS@
 #define tileset_start $@TILESET_ORIGIN@
 #define tileset_height $@TILE_HEIGHT@
@@ -12,6 +13,10 @@
 #define grid_width $@GRID_WIDTH@
 #define display_start $@DISPLAY_ORIGIN@
 #define display_end @DISPLAY_END_ASM@
+#define sprite_table_start @SPRITES_ORIGIN_ASM@
+#define sprite_table_finish @SPRITES_FINISH_ASM@
+#define sprite_size_bytes $@SPRITE_SIZE_BYTES@
+#define number_of_sprites $@NUMBER_OF_SPRITES@
 #define ram_start $@RAM_ORIGIN@
 #define ram_size $@RAM_SIZE@
 #define grid_mask_h $@GRID_MASK_H@
