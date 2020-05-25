@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_helpers/")
 
 set(PROJ_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(SRC_ROOT_DIR ${PROJ_DIR}/src/${PROJ_NAME}/${REPO_NAME})
+set(SRC_ROOT_DIR ${PROJ_DIR}/src/emulator)
 
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
@@ -18,7 +18,9 @@ include_directories("${PROJ_DIR}/z80/API")
 
 include_directories("${PROJ_DIR}/src/")
 
-add_subdirectory("${PROJ_DIR}/src/constants")
+if(NOT CONSTANTS_DEFINED)
+  add_subdirectory("${PROJ_DIR}/src/constants")
+endif()
 
 set(Z80_SOURCE_DIRECTORIES ${PROJ_DIR}/z80/)
 
