@@ -773,6 +773,7 @@ int main(int argc, char** argv)
                 }
                 if(initializing == FALSE)
                 {
+                    s_time_event_pushed = 0;
                     //screen_refresh();
                     //SDL_RenderPresent(p_sdl_renderer);
                     //SDL_Delay(10);
