@@ -4,3 +4,6 @@
 [submodule "z80"]
 	path = z80
 	url = git@github.com:redcode/z80.git
+[submodule "catch2"]
+	path = catch2
+	url = git@github.com:catchorg/catch2.git
