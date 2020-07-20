@@ -36,7 +36,7 @@ endforeach()
 message("Building z80 source emulator files ${z80_source_files}")
 add_library(z80_emu_library SHARED ${z80_source_files})
 
-add_executable(z80_emulator src/emulator/emulator.c)
+add_executable(z80_emulator src/z80_emulator/emulator.c)
 target_link_libraries(z80_emulator z80_emu_library ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
 
 set(pz80e_src_root src/phobos2390/z80_emulator)
@@ -49,7 +49,8 @@ foreach(source_dir ${pz80e_src})
   file(GLOB dir_src_files ${pz80e_src_root}/${source_dir}/*.cpp)
   set(pz80e_lib_files ${pz80e_lib_files}
                       ${dir_src_files})
-  file(GLOB globbed_test_src ${pz80e_src_root}/${source_dir}/test/*.cpp)
+  file(GLOB globbed_test_src ${pz80e_src_root}/${source_dir}/*.cpp
+                             ${pz80e_src_root}/${source_dir}/test/*.cpp)
   set(pz80e_test_files ${pz80e_test_files}
                        ${globbed_test_src})
 endforeach()
@@ -58,7 +59,6 @@ endforeach()
 #                     src/phobos2390/test_catch_main/catch_definition_test.cpp
 #                     ${pz80e_test_files})
 
-add_library(pz80e_lib STATIC ${pz80e_lib_files})
+add_library(pz80e_lib SHARED ${pz80e_lib_files})
 add_executable(test_pz80e ${pz80e_test_files})
-target_link_libraries(test_pz80e ${pz80e_lib})
 

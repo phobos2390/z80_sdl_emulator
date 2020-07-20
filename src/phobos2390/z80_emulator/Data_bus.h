@@ -4,8 +4,8 @@
 #define Z80_EMULATOR_DATA_BUS_H
 
 #include <stdint.h>
-#include <z80_emulator/emulator_constants.h>
 #include <z80_emulator/emulator_typedefs.h>
+#include <z80_emulator/emulator_errors.h>
 #include <z80_emulator/I_data_bus_section.h>
 
 namespace z80_emulator

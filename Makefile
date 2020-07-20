@@ -6,7 +6,7 @@ test: lib
 	
 lib:
 	@mkdir -p build
-	@cd build; cmake ..
+	@cd build; cmake3 ..
 	@cd build; make
 
 clean:
