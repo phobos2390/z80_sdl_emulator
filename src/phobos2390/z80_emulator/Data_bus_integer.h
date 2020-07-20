@@ -2,7 +2,7 @@
 #ifndef DATA_BUS_INTEGER_H
 #define DATA_BUS_INTEGER_H
 
-#include <z80_emulator/I_data_bus_integer.h>
+#include <z80_emulator/I_data_bus_section.h>
 
 namespace z80_emulator
 {
@@ -29,6 +29,10 @@ public:
     /// @param[in] address offset from root portion of the section
     /// @param[in] value what to set data at the address to
     virtual void set_data(uint16_t address, uint8_t value);
+    
+    INT_TYPE get_integer();
+
+    void set_integer(INT_TYPE value);
     
 private:
     struct Impl;

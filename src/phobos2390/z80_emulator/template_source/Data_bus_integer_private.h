@@ -2,7 +2,8 @@
 #ifndef Z80_EMULATOR_TEMPLATE_SOURCE_DATA_BUS_INTEGER_PRIVATE_H
 #define Z80_EMULATOR_TEMPLATE_SOURCE_DATA_BUS_INTEGER_PRIVATE_H
 
-#include <z80_emulatorData_bus_integer.h>
+#include <z80_emulator/Data_bus_integer.h>
+#include <stddef.h>
 
 namespace z80_emulator
 {
@@ -47,7 +48,7 @@ struct Data_bus_integer<INT_TYPE>::Impl
         for(int i = 0; i < sizeof(m_value); i++)
         {
             int r = sizeof(m_value) - 1 - i;
-            m_value[r] = (mask_value & value) >> (r * single_shift_value);
+            m_value[i] = (mask_value & value) >> (r * single_shift_value);
             mask_value = mask_value >> single_shift_value;
         }
     }
@@ -81,22 +82,25 @@ uint16_t Data_bus_integer<INT_TYPE>::get_section_size() const
 template<typename INT_TYPE>
 uint8_t Data_bus_integer<INT_TYPE>::get_data(uint16_t address)
 {
-    INT_TYPE mask_value = 0xFF;
-    size_t single_shift_value = 0x8;
-    size_t reverse_shift_value = 0;
-    for(int i = 0; i < address; i++)
-    {
-        mask_value = (mask_value << single_shift_value);
-        reverse_shift_value += single_shift_value;
-    }
-    int8_t ret_value = ((mask_value & m_p_impl->m_value) >> reverse_shift_value);
-    return ret_value;
+    return m_p_impl->m_value[address];
 }
 
 template<typename INT_TYPE>
 void Data_bus_integer<INT_TYPE>::set_data(uint16_t address, uint8_t value)
 {
-    
+    m_p_impl->m_value[address] = value;
+}
+
+template<typename INT_TYPE>
+INT_TYPE Data_bus_integer<INT_TYPE>::get_integer()
+{
+    return m_p_impl->get_int_value();
+}
+
+template<typename INT_TYPE>
+void Data_bus_integer<INT_TYPE>::set_integer(INT_TYPE value)
+{
+        m_p_impl->set_int_value(value);
 }
 
 }
