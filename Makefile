@@ -3,6 +3,9 @@ all:
 
 test: lib 
 	build/test_pz80e
+
+valgrind: lib
+	valgrind build/test_pz80e
 	
 lib:
 	@mkdir -p build

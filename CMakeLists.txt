@@ -8,7 +8,7 @@ set(SRC_ROOT_DIR ${PROJ_DIR}/src/${PROJ_NAME}/${REPO_NAME})
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
 set(CMAKE_C_FLAGS "-g -m64")
-set(CMAKE_CXX_FLAGS "-g -m64 -std=c++14")
+set(CMAKE_CXX_FLAGS "-g -m64 -std=c++11")
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
