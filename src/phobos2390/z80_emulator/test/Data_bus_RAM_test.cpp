@@ -1,8 +1,8 @@
 /// @file phobos2390/z80_emulator/test/Data_bus_RAM_test.cpp
 
-#include <phobos2390/z80_emulator/Data_bus_RAM.h>
+#include <z80_emulator/Data_bus_RAM.h>
 #include <catch2/catch.hpp>
-#include <phobos2390/z80_emulator/Data_bus_RAM.h> // Testing include guard
+#include <z80_emulator/Data_bus_RAM.h> // Testing include guard
 
 using namespace z80_emulator;
 

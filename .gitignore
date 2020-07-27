@@ -2,3 +2,4 @@ assembler_constants.asm
 build
 emulator_constants.h
 nbproject
+test_files/*.png
