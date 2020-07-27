@@ -12,7 +12,7 @@ TEST_CASE( "Tileset_definition_test", "stack" )
     metadata.m_tile_width_pixels = 0x8;
     metadata.m_tile_height_pixels = 0x8;
     metadata.m_tile_color_depth = 0x1;
-    memset(metadata.m_pallete, 0, sizeof(z80_emulator::s_c_pallete_size));
+    memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     Tileset_definition c(metadata);
 }
 
@@ -22,7 +22,7 @@ TEST_CASE( "Tileset_definition_test.binary_tileset", "binary_tileset" )
     metadata.m_tile_width_pixels = 0x8;
     metadata.m_tile_height_pixels = 0x8;
     metadata.m_tile_color_depth = 0x1;
-    memset(metadata.m_pallete, 0, sizeof(z80_emulator::s_c_pallete_size));
+    memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     metadata.m_pallete[0] = 0xFF000000;
     metadata.m_pallete[1] = 0xFF00FFCC;
     Tileset_definition c(metadata);
@@ -66,7 +66,7 @@ TEST_CASE( "Tileset_definition_test.quad_tileset", "quad_tileset" )
     metadata.m_tile_width_pixels = 0x8;
     metadata.m_tile_height_pixels = 0x8;
     metadata.m_tile_color_depth = 0x2;
-    memset(metadata.m_pallete, 0, sizeof(z80_emulator::s_c_pallete_size));
+    memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     metadata.m_pallete[0] = 0x00000000;
     metadata.m_pallete[1] = 0xFF005500;
     metadata.m_pallete[2] = 0xFF00AA00;
@@ -123,7 +123,7 @@ TEST_CASE( "Tileset_definition_test.nibble_tileset", "nibble_tileset" )
     metadata.m_tile_width_pixels = 0x8;
     metadata.m_tile_height_pixels = 0x8;
     metadata.m_tile_color_depth = 0x4;
-    memset(metadata.m_pallete, 0, sizeof(z80_emulator::s_c_pallete_size));
+    memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     uint16_t pallete_iter = 0;
     metadata.m_pallete[pallete_iter++] = 0x00000000;
     metadata.m_pallete[pallete_iter++] = 0xFF000000;

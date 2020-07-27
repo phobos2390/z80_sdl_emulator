@@ -8,5 +8,6 @@
 typedef int32_t Error;
 static const Error s_c_error_none = 0;
 static const Error s_c_error_overlap = -1;
+static const Error s_c_error_too_large_instruction_size = -2;
 
 #endif /* Z80_EMULATOR_EMULATOR_ERRORS */
