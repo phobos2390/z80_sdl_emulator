@@ -10,17 +10,17 @@
 namespace z80_emulator
 {
 
-class Grid_Display:public I_data_bus_section, public I_tileset_renderable
+class Grid_display:public I_data_bus_section, public I_tileset_renderable
 {
 public:
     /// Creates class value
     /// @param[in] metadata - tile dimensions
     /// @param[in] width - left right dimensions of the grid
     /// @param[in] height - up down dimensions of the grid
-    Grid_Display(Tileset_metadata& metadata, uint16_t width, uint16_t height);
+    Grid_display(Tileset_metadata& metadata, uint16_t width, uint16_t height);
 
     /// Removes class value
-    virtual ~Grid_Display();
+    virtual ~Grid_display();
     
     /// Gets the size of the section
     virtual uint16_t get_section_size() const;

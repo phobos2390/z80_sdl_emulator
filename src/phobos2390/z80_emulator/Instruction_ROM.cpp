@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include <vector>
+#include <map>
 
 namespace z80_emulator
 {
@@ -343,7 +344,7 @@ std::string instruction::to_string()
     return sstr.str();
 }
 
-uint32_t instruction::get_opcode(const char* p_instruction_name)
+uint32_t get_opcode_from_name(const char* p_instruction_name)
 {
     uint32_t opcode = 0;
     for(uint16_t i = 0; i < s_c_instruction_array_size_bytes; i++)
@@ -380,6 +381,40 @@ uint32_t instruction::get_opcode(const char* p_instruction_name)
     return opcode;
 }
 
+uint16_t get_instruction_size(const char* p_instruction_name)
+{
+    uint16_t instruction_size = 0;
+    uint32_t opcode = get_opcode_from_name(p_instruction_name);
+    if( ( (opcode == 0)
+       && (0 == strncmp( p_instruction_name
+                       , "noop"
+                       , s_c_instruction_name_max_length)))
+     || (((opcode & 0xFFFFFF00) == 0) && (opcode != 0) ))
+    {
+        instruction_size = opcode_sizes[opcode];
+    }
+    else if( ((opcode & 0xFF00) == 0xDD00)
+          || ((opcode & 0xFF00) == 0xFD00) )
+    {
+        instruction_size = opcode_sizes_I[(opcode & 0xFF)];
+    }
+    else if( ((opcode & 0xFFFF0000) == 0xDDCB0000)
+          || ((opcode & 0xFFFF0000) == 0xFDCB0000) )
+    {
+        instruction_size = opcode_sizes_I[(opcode & 0x00FF0000) >> 16];
+    }
+    else if((opcode & 0xFF00) == 0xED00)
+    {
+        instruction_size = opcode_sizes_ED[opcode & 0xFF];
+    }
+    return instruction_size;
+}
+
+uint32_t instruction::get_opcode(const char* p_instruction_name)
+{
+    return get_opcode_from_name(p_instruction_name);
+}
+
 uint16_t instruction::get_indirect_count(const char* label)
 {
     std::string s(label);
@@ -408,6 +443,10 @@ struct Instruction_ROM::Impl
 {
 public:
     Data_bus_RAM m_instruction_data;
+    std::map<std::string, uint16_t> m_symbols;
+    std::vector<std::string> m_failed_commands;
+    std::map<uint16_t, std::pair<std::string, std::string> > m_undefined_symbol_location;
+    std::map<std::string, std::vector<uint16_t> > m_undefined_symbol_list;
     uint16_t m_instruction_size;
     uint16_t m_fill_size;
     uint16_t m_opcode_instructions;
@@ -451,17 +490,28 @@ public:
         }
     }
     
-    void add_instruction_binary_data(instruction& new_instruction)
+    uint16_t add_instruction_binary_data(instruction& new_instruction, uint16_t start_address)
     {
+        uint16_t current_address = start_address;
         if(new_instruction.is_valid())
         {
             std::vector<uint8_t> bytes;
             new_instruction.append_bytes(bytes);
             for(uint32_t i = 0; i < bytes.size(); i++)
             {
-                m_instruction_data.set_data(m_fill_size++, bytes[i]);
+                m_instruction_data.set_data(current_address++, bytes[i]);
             }
         }
+        else
+        {
+            m_failed_commands.push_back(new_instruction.to_string());
+        }
+        return current_address;
+    }
+    
+    void add_instruction_binary_data(instruction& new_instruction)
+    {
+        m_fill_size = add_instruction_binary_data(new_instruction, m_fill_size);
     }
 };  
 
@@ -557,6 +607,107 @@ Instruction_ROM& Instruction_ROM::add_instruction(const char* label, uint8_t hig
     instruction new_instruction(label, high, low);
     m_p_impl->add_instruction_binary_data(new_instruction);
     return *this;
+}
+
+Instruction_ROM& Instruction_ROM::add_instruction_with_symbol(const char* label, const char* identifier)
+{
+    if(m_p_impl->m_symbols.find(identifier) == m_p_impl->m_symbols.end())
+    {
+        uint16_t instruction_size = get_instruction_size(label);
+        if(instruction_size > 0)
+        {
+            if( m_p_impl->m_undefined_symbol_list.find(identifier)
+             == m_p_impl->m_undefined_symbol_list.end())
+            {
+                m_p_impl->m_undefined_symbol_list.emplace(identifier,std::vector<uint16_t>());
+            }
+            m_p_impl->m_undefined_symbol_list[identifier]
+                .push_back(m_p_impl->m_fill_size);
+
+            m_p_impl->m_undefined_symbol_location
+                .emplace( m_p_impl->m_fill_size
+                        , std::make_pair(label, identifier));
+            m_p_impl->m_fill_size += instruction_size;
+        }
+        else
+        {
+            std::string failed_instruction = label;
+            failed_instruction += " ";
+            failed_instruction += identifier;
+            m_p_impl->m_failed_commands.push_back(failed_instruction);
+        }
+    }
+    else
+    {
+        uint16_t value = m_p_impl->m_symbols[identifier];
+        std::string instruction = label;
+        if(std::count(instruction.begin(), instruction.end(), '*') == 1)
+        {
+            (void)add_instruction(label, value);
+        }
+        else if(std::count(instruction.begin(), instruction.end(), '*') == 2)
+        {
+            uint8_t high = (value & 0xFF00) >> 8;
+            uint8_t low  = value & 0xFF;
+            (void)add_instruction(label, high, low);
+        }
+        else
+        {
+            std::string failed_instruction = label;
+            failed_instruction += " ";
+            failed_instruction += identifier;
+            m_p_impl->m_failed_commands.push_back(failed_instruction);
+        }
+    }
+    return *this;
+}
+
+std::vector<std::string>& Instruction_ROM::get_failed_instructions_list()
+{
+    return m_p_impl->m_failed_commands;
+}
+
+Instruction_ROM& Instruction_ROM::add_symbolic_value(const char* identifier, uint16_t value)
+{
+    if(m_p_impl->m_symbols.find(identifier) == m_p_impl->m_symbols.end())
+    {
+        m_p_impl->m_symbols.emplace(identifier, value);
+        if( m_p_impl->m_undefined_symbol_list.find(identifier)
+         != m_p_impl->m_undefined_symbol_list.end())
+        {
+            std::vector<uint16_t>& list 
+                = m_p_impl->m_undefined_symbol_list[identifier];
+            for(size_t i = 0; i < list.size(); i++)
+            {
+                if( m_p_impl->m_undefined_symbol_location.find(list[i])
+                 != m_p_impl->m_undefined_symbol_location.end())
+                {
+                    std::pair<std::string, std::string>& pair_string
+                        = m_p_impl->m_undefined_symbol_location[list[i]];
+                    
+                    std::string in_name = pair_string.first;
+                    if(std::count(in_name.begin(), in_name.end(), '*') == 1)
+                    {
+                        instruction instruct(in_name.c_str(), value);
+                        m_p_impl->add_instruction_binary_data(instruct, list[i]);
+                    }
+                    else if(std::count(in_name.begin(), in_name.end(), '*') == 2)
+                    {
+                        uint8_t high = (value & 0xFF00) >> 8;
+                        uint8_t low  = value & 0xFF;
+                        instruction instruct(in_name.c_str(), high, low);
+                        m_p_impl->add_instruction_binary_data(instruct, list[i]);
+                    }
+                }
+            }
+        }
+    }
+    return *this;
+}
+
+Instruction_ROM& Instruction_ROM::add_symbol_at_current_fill(const char* identifier)
+{
+    return add_symbolic_value(identifier, m_p_impl->m_fill_size);
 }
 
 }

@@ -1,6 +1,6 @@
 /// @file z80_emulator/Grid_Display.cpp
 
-#include <z80_emulator/Grid_Display.h>
+#include <z80_emulator/Grid_display.h>
 #include <z80_emulator/Data_bus_RAM.h>
 #include <z80_emulator/Data_bus_integer.h>
 #include <z80_emulator/Data_bus_function.h>
@@ -12,7 +12,7 @@
 namespace z80_emulator
 {
 
-struct Grid_Display::Impl
+struct Grid_display::Impl
 {
 public:
     uint16_t m_width;
@@ -74,33 +74,33 @@ public:
     
 };
 
-Grid_Display::Grid_Display(Tileset_metadata& metadata, uint16_t width, uint16_t height)
+Grid_display::Grid_display(Tileset_metadata& metadata, uint16_t width, uint16_t height)
     :m_p_impl(new Impl(metadata, width, height))
 {
 }
 
-Grid_Display::~Grid_Display()
+Grid_display::~Grid_display()
 {
     delete m_p_impl;
     m_p_impl = 0;
 }
 
-uint16_t Grid_Display::get_section_size() const
+uint16_t Grid_display::get_section_size() const
 {
     return m_p_impl->m_width * m_p_impl->m_height;
 }
 
-uint8_t Grid_Display::get_data(uint16_t address)
+uint8_t Grid_display::get_data(uint16_t address)
 {
     return m_p_impl->m_vram.get_data(address);
 }
     
-void Grid_Display::set_data(uint16_t address, uint8_t value)
+void Grid_display::set_data(uint16_t address, uint8_t value)
 {
     m_p_impl->m_vram.set_data(address,value);
 }
     
-void Grid_Display::render( SDL_Texture *p_sdl_tileset_texture
+void Grid_display::render( SDL_Texture *p_sdl_tileset_texture
                          , SDL_Renderer *p_sdl_renderer
                          , Tileset_metadata& tile_data)
 {
@@ -127,7 +127,7 @@ void Grid_Display::render( SDL_Texture *p_sdl_tileset_texture
     }
 }
 
-Error Grid_Display::add_to_data_bus( Data_bus& db
+Error Grid_display::add_to_data_bus( Data_bus& db
                                    , uint16_t iter_address
                                    , uint16_t file_descriptor_address)
 {

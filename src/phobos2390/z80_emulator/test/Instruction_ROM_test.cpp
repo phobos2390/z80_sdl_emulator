@@ -63,13 +63,18 @@ TEST_CASE( "Instruction_ROM_test.instruction_list", "sample_instruction_list_tes
 {
     uint16_t sample_rom_size = 0x1000;
     Instruction_ROM c(sample_rom_size);
-    c.add_instruction("ld a,*", 0x1)
+    c.add_symbolic_value("stdout_addr", 0x8000)
+     .add_instruction("ld a,*", 0x1)
      .add_instruction("ld b,a")
      .add_instruction("inc a")
-     .add_instruction("ld hl,**", 0x80, 0x00)
+     .add_instruction_with_symbol("ld hl,**", "stdout_addr")
      .add_instruction("ld (hl),a")
      .add_instruction("ld (hl),b")
      .add_instruction("halt");
+    
+    std::vector<std::string>& failed_list = c.get_failed_instructions_list();
+    
+    REQUIRE( failed_list.size() == 0 );
     
     std::vector<uint16_t> instruction_list;
     c.parse_instruction_list(instruction_list);

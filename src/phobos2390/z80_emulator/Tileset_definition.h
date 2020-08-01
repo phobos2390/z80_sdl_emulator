@@ -9,6 +9,8 @@
 namespace z80_emulator
 {
 
+class Data_bus;
+
 class Tileset_definition:public I_data_bus_section
 {
 public:
@@ -36,6 +38,8 @@ public:
     void write_tileset_to_file(const char* p_filename);
     
     void set_full_tileset();
+    
+    void set_from_databus(Data_bus& data_bus, uint16_t start, uint16_t end);
 private:
     struct Impl;
     Impl* m_p_impl;

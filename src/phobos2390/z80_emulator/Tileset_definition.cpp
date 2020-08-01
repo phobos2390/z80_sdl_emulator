@@ -1,6 +1,7 @@
 /// @file phobos2390/z80_emulator/Tileset_definition.cpp
 
 #include <z80_emulator/Tileset_definition.h>
+#include <z80_emulator/Data_bus.h>
 
 namespace z80_emulator
 {
@@ -270,6 +271,18 @@ void Tileset_definition::write_tileset_to_file(const char* p_filename)
     {
         m_p_impl->set_full_tileset();
         IMG_SavePNG(m_p_impl->m_p_sdl_tileset_picture, p_filename);
+    }
+}
+
+void Tileset_definition::set_from_databus(Data_bus& data_bus, uint16_t start, uint16_t end)
+{
+    uint16_t dest = 0;
+    for(uint16_t i = start; i < end; i++)
+    {
+        if(dest < m_p_impl->m_tileset_total_size)
+        {
+            m_p_impl->m_p_character_set[dest++] = data_bus.read(i);
+        }
     }
 }
 

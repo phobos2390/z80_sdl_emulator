@@ -1,8 +1,8 @@
 /// @file z80_emulator/test/Grid_Display_test.cpp
 
-#include <z80_emulator/Grid_Display.h>
+#include <z80_emulator/Grid_display.h>
 #include <catch2/catch.hpp>
-#include <z80_emulator/Grid_Display.h> // Testing include guard
+#include <z80_emulator/Grid_display.h> // Testing include guard
 
 using namespace z80_emulator;
 
@@ -15,5 +15,5 @@ TEST_CASE( "Grid_Display_test", "stack" )
     memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     uint16_t height = 0x10;
     uint16_t width = 0x10;
-    Grid_Display c(metadata, width, height);
+    Grid_display c(metadata, width, height);
 }

@@ -67,6 +67,14 @@ public:
     Instruction_ROM& add_instruction(const char* label, uint8_t direct);
 
     Instruction_ROM& add_instruction(const char* label, uint8_t high, uint8_t low);
+
+    Instruction_ROM& add_instruction_with_symbol(const char* label, const char* identifier);
+
+    Instruction_ROM& add_symbolic_value(const char* identifier, uint16_t value);
+
+    Instruction_ROM& add_symbol_at_current_fill(const char* identifier);
+    
+    std::vector<std::string>& get_failed_instructions_list();
 private:
     struct Impl;
     Impl* m_p_impl;
