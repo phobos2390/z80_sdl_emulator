@@ -1,0 +1,17 @@
+	0	1	2	3	4	5	6	7	8	9	A	B	C	D	E	F
+0										add iy,bc						
+1										add iy,de						
+2		ld iy,**	ld (**),iy	inc iy	inc iyh	dec iyh	ld iyh,*			add iy,iy	ld iy,(**)	dec iy	inc iyl	dec iyl	ld iyl,*	
+3					inc (iy+*)	dec (iy+*)	ld (iy+*),*			add iy,sp						
+4					ld b,iyh	ld b,iyl	ld b,(iy+*)						ld c,iyh	ld c,iyl	ld c,(iy+*)	
+5					ld d,iyh	ld d,iyl	ld d,(iy+*)						ld e,iyh	ld e,iyl	ld e,(iy+*)	
+6	ld iyh,b	ld iyh,c	ld iyh,d	ld iyh,e	ld iyh,iyh	ld iyh,iyl	ld h,(iy+*)	ld iyh,a	ld iyl,b	ld iyl,c	ld iyl,d	ld iyl,e	ld iyl,iyh	ld iyl,iyl	ld l,(iy+*)	ld iyl,a
+7	ld (iy+*),b	ld (iy+*),c	ld (iy+*),d	ld (iy+*),e	ld (iy+*),h	ld (iy+*),l		ld (iy+*),a					ld a,iyh	ld a,iyl	ld a,(iy+*)	
+8					add a,iyh	add a,iyl	add a,(iy+*)						adc a,iyh	adc a,iyl	adc a,(iy+*)	
+9					sub iyh	sub iyl	sub (iy+*)						sbc a,iyh	sbc a,iyl	sbc a,(iy+*)	
+A					and iyh	and iyl	and (iy+*)						xor iyh	xor iyl	xor (iy+*)	
+B					or iyh	or iyl	or (iy+*)						cp iyh	cp iyl	cp (iy+*)	
+C													IY BITS				
+D																	
+E		pop iy		ex (sp),iy		push iy				jp (iy)						
+F										ld sp,iy						

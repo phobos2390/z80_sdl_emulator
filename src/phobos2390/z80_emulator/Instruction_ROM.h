@@ -6,6 +6,7 @@
 #include <z80_emulator/I_data_bus_section.h>
 #include <z80_emulator/emulator_errors.h>
 #include <vector>
+#include <string>
 
 namespace z80_emulator
 {
@@ -13,45 +14,26 @@ namespace z80_emulator
 class instruction
 {
 public:
-    instruction(){}
-    virtual ~instruction(){}
-    
-    virtual void append_bytes(std::vector<uint8_t>& bytes)=0;
-};
+    instruction(const char* label);
+    instruction(const char* label, uint8_t direct);
+    instruction(const char* label, uint8_t high, uint8_t low);
 
-enum register_id
-{
-    register_b,
-    register_c,
-    register_d,
-    register_e,
-    register_h,
-    register_l,
-    register_hl_ind,
-    register_a,
-
-    register_bc_direct,
-    register_de_direct,
-    register_hl_direct,
-    register_sp_direct,
+    virtual ~instruction();
     
-    register_bc_ind,
-    register_de_ind,
-    register_f,
-};
-
-class ld: public instruction
-{
-public:
-    ld(register_id dst, register_id src);
-    ld(register_id dst, uint16_t immediate);
-    ld(uint16_t immediate, register_id src);
-    virtual ~ld();
+    void append_bytes(std::vector<uint8_t>& bytes);
     
-    virtual void append_bytes(std::vector<uint8_t>& bytes);
+    bool is_valid();
+    
+    std::string to_string();
 private:
-    uint8_t m_opcode;
-    uint16_t m_immediate;
+    uint32_t get_opcode(const char* p_instruction_name);
+    uint16_t get_indirect_count(const char* label);
+    bool is_valid_instruction(const char* label);
+    bool is_valid_instruction(const char* label, uint8_t direct);
+    bool is_valid_instruction(const char* label, uint8_t high, uint8_t low);
+    
+    uint32_t m_instruction_data;
+    bool m_valid;
 };
 
 class Instruction_ROM:public I_data_bus_section
@@ -80,7 +62,11 @@ public:
     
     void parse_instruction_list(std::vector<uint16_t>& instruction_list);
     
-    void add_instruction(instruction& instruction);
+    Instruction_ROM& add_instruction(const char* label);
+
+    Instruction_ROM& add_instruction(const char* label, uint8_t direct);
+
+    Instruction_ROM& add_instruction(const char* label, uint8_t high, uint8_t low);
 private:
     struct Impl;
     Impl* m_p_impl;

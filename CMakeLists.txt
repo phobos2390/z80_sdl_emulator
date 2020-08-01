@@ -59,7 +59,7 @@ endforeach()
 #                     src/phobos2390/test_catch_main/catch_definition_test.cpp
 #                     ${pz80e_test_files})
 
-add_library(pz80e_lib SHARED ${pz80e_lib_files})
+add_library(pz80e_lib STATIC ${pz80e_lib_files})
 add_executable(test_pz80e ${pz80e_test_files})
 target_link_libraries(test_pz80e pz80e_lib z80_emu_library ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
 
