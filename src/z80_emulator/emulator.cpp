@@ -208,10 +208,15 @@ int main(int argc, char** argv)
             z80_emulator::Tileset_metadata metadata;
             metadata.m_tile_width_pixels = s_c_tile_width;
             metadata.m_tile_height_pixels = s_c_tile_height;
-            metadata.m_tile_color_depth = s_c_color_depth;
+            metadata.m_tile_color_depth = s_c_tile_depth;
             memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
-            metadata.m_pallete[0] = s_c_foreground_color;
-            metadata.m_pallete[1] = s_c_background_color;
+            if(s_c_tile_depth < 0x8)
+            {
+                for(uint32_t i = 0; i < (s_c_tile_depth * s_c_tile_depth); i++)
+                {
+                    metadata.m_pallete[i] = s_c_pallete[i];
+                }
+            }
             
             emulator_context context( s_c_memory_size
                                     , metadata
