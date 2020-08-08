@@ -21,6 +21,16 @@ include_directories("${PROJ_DIR}/src/")
 include_directories("${PROJ_DIR}/src/phobos2390/")
 include_directories("${PROJ_DIR}/catch2/single_include")
 
+if(NOT CONST_IN_DIRECTORY)
+  set(CONST_IN_DIRECTORY ${PROJ_DIR}/src/constants/)
+endif()
+if(NOT CONST_OUT_ASM)
+  set(CONST_OUT_ASM ${PROJ_DIR}/src/assembler/assembler_constants.asm)
+endif()
+if(NOT CONST_OUT_EMU)
+  set(CONST_OUT_EMU ${PROJ_DIR}/src/emulator/emulator_constants.h)
+endif()
+
 add_subdirectory("${PROJ_DIR}/src/constants")
 
 set(Z80_SOURCE_DIRECTORIES ${PROJ_DIR}/z80/)

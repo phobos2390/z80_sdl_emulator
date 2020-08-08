@@ -10,6 +10,7 @@ struct Tileset_definition::Impl
 {
 public:
     static const uint16_t s_c_bits_in_byte = 0x8;
+    static const uint16_t s_c_tile_dimension = 0x10;
     static const uint16_t s_c_total_characters = 0x100;
     static const uint32_t s_c_sdl_color_depth = 0x20;
     
@@ -20,6 +21,7 @@ public:
     uint16_t m_tileset_total_size;
     uint8_t* m_p_character_set;
     SDL_Surface* m_p_sdl_tileset_picture;
+    SDL_Surface* m_p_sdl_square_tileset_picture;
     
     Impl(Tileset_metadata& metadata)
     : m_metadata()
@@ -38,6 +40,16 @@ public:
                                                   , 0x0000FF00
                                                   , 0x000000FF
                                                   , 0xFF000000))
+    , m_p_sdl_square_tileset_picture(SDL_CreateRGBSurface( 0
+                                                         , ( s_c_tile_dimension
+                                                           * metadata.m_tile_width_pixels)
+                                                         , ( s_c_tile_dimension
+                                                           * metadata.m_tile_height_pixels)
+                                                         , s_c_sdl_color_depth
+                                                         , 0x00FF0000
+                                                         , 0x0000FF00
+                                                         , 0x000000FF
+                                                         , 0xFF000000))
     {
         m_metadata.m_tile_width_pixels = metadata.m_tile_width_pixels;
         m_metadata.m_tile_height_pixels = metadata.m_tile_height_pixels;
@@ -48,6 +60,7 @@ public:
     
     virtual ~Impl()
     {
+        SDL_FreeSurface(m_p_sdl_square_tileset_picture);
         SDL_FreeSurface(m_p_sdl_tileset_picture);
         delete [] m_p_character_set;
     }
@@ -149,6 +162,11 @@ public:
             uint32_t blue =   bit_pixel_value[(0x03 & pixel_byte_data)];
             uint32_t pixel_value = alpha | red | green | blue;
             set_pixel(m_p_sdl_tileset_picture, pix_column + offset, pix_row, pixel_value);
+
+            set_pixel( m_p_sdl_square_tileset_picture
+                     , pix_column + (offset & 0xF)
+                     , pix_row + ((offset & 0xF0) >> 4)
+                     , pixel_value);
         }
         else if( (m_metadata.m_tile_color_depth <= 0x4) 
               && (m_metadata.m_tile_color_depth > 0))
@@ -182,6 +200,15 @@ public:
                 set_pixel( m_p_sdl_tileset_picture
                          , (pix_column * get_pixel_column_offset()) + r + offset
                          , pix_row
+                         , pixel_color);
+                
+                uint32_t character = (offset / m_metadata.m_tile_width_pixels);
+                uint32_t offset_x = (character & 0xF) * m_metadata.m_tile_width_pixels;
+                uint32_t offset_y = ((character & 0xF0) >> 4) * m_metadata.m_tile_height_pixels;
+
+                set_pixel( m_p_sdl_square_tileset_picture
+                         , (pix_column * get_pixel_column_offset()) + r + offset_x
+                         , pix_row + offset_y
                          , pixel_color);
             }
         }
@@ -259,7 +286,7 @@ void Tileset_definition::set_full_tileset()
 
 void Tileset_definition::write_tileset_to_file(const char* p_filename)
 {
-    if(m_p_impl->m_p_sdl_tileset_picture == NULL)
+    if(m_p_impl->m_p_sdl_square_tileset_picture == NULL)
     {
         SDL_Log("Cannot write a null picture to a file");
     }
@@ -270,7 +297,7 @@ void Tileset_definition::write_tileset_to_file(const char* p_filename)
     else
     {
         m_p_impl->set_full_tileset();
-        IMG_SavePNG(m_p_impl->m_p_sdl_tileset_picture, p_filename);
+        IMG_SavePNG(m_p_impl->m_p_sdl_square_tileset_picture, p_filename);
     }
 }
 

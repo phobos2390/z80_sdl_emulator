@@ -1,16 +1,18 @@
 # Number values are in hex
 
+set(CONSTANTS_DEFINED true PARENT_SCOPE)
+
 set(COLOR_DEPTH 20)
 set(FOREGROUND_COLOR FFCCCCFF)
 set(BACKGROUND_COLOR FF000000)
 
 set(MAX_BYTE_VALUE 100)
 
-set(MEMORY_SIZE 1000)
-set(GRID_HEIGHT 0040)
-set(GRID_WIDTH  0080)
+set(MEMORY_SIZE 5000)
+set(GRID_HEIGHT 0020)
+set(GRID_WIDTH  0020)
 set(GRID_MASK_H FF)
-set(GRID_MASK_L 80)
+set(GRID_MASK_L 10)
 set(GRID_SIZE_C "0x${GRID_HEIGHT} * 0x${GRID_WIDTH}")
 set(GRID_SIZE_ASM "\$${GRID_HEIGHT} * \$${GRID_WIDTH}")
 set(STACK_TOP  FFFF)
@@ -18,33 +20,60 @@ set(STACK_SIZE 1000)
 set(RAM_ORIGIN E000)
 set(RAM_SIZE   1000)
 
-set(TILE_WIDTH  8)
+set(TILE_DEPTH  8)
+set(TILE_WIDTH_PIX  8)
+set(TILE_WIDTH_ASM  "\$${TILE_DEPTH} * \$${TILE_WIDTH_PIX}")
+set(TILE_WIDTH_BYTES_ASM  "(\$${TILE_DEPTH} * \$${TILE_WIDTH_PIX})/$8")
+set(TILE_WIDTH_C    "0x${TILE_DEPTH} * 0x${TILE_WIDTH_PIX}")
 set(TILE_HEIGHT 8)
 
-set(STDOUT_ADDRESS 8000)
-set(GRID_ITERATOR  8002)
-set(CHAR_INPUT     8001)
+set(BITS_IN_BYTE 8)
+set(TILE_WIDTH_BYTES_C "(${TILE_WIDTH_C}) / (0x${BITS_IN_BYTE})")
+
+set(STDOUT_ADDRESS 9000)
+set(GRID_ITERATOR  9005)
+set(CHAR_INPUT     9003)
+set(PERC_ADDRESS   9002)
+set(TICK_VALUE     9006)
 
 set(INTERRUPT_ADDRESS DF00)
 
-set(TILESET_ORIGIN 2000)
-set(SIZEOF_TILE_C "(0x${TILE_HEIGHT} * 0x${TILE_WIDTH})/(0x8)")
+set(TILESET_ORIGIN 5000)
+set(SIZEOF_TILE_C "(0x${TILE_HEIGHT} * ${TILE_WIDTH_C})/(0x8)")
 set(TILESET_SIZE_C "0x100 * (${SIZEOF_TILE_C})")
 
-set(SIZEOF_TILE_ASM "(\$${TILE_HEIGHT} * \$${TILE_WIDTH})/(\$8)")
+set(SIZEOF_TILE_ASM "(\$${TILE_HEIGHT} * ${TILE_WIDTH_ASM})/(\$8)")
 set(TILESET_SIZE_ASM "\$100 * (\$${SIZEOF_TILE_ASM})")
 
-set(DISPLAY_ORIGIN 2800)
+set(DISPLAY_ORIGIN A000)
 set(DISPLAY_SIZE_C "0x${GRID_HEIGHT} * 0x${GRID_WIDTH}")
 set(DISPLAY_END_C "0x${DISPLAY_ORIGIN} + (${DISPLAY_SIZE_C})")
 
 set(DISPLAY_SIZE_ASM "\$${GRID_HEIGHT} * \$${GRID_WIDTH}")
 set(DISPLAY_END_ASM "\$${DISPLAY_ORIGIN} + (${DISPLAY_SIZE_ASM})")
 
-set(TILESET_SPACE_START_ASM "\$${TILESET_ORIGIN} + (' ' * ${SIZEOF_TILE_ASM})")
+set(SPRITE_SIZE_BYTES 4)
+set(NUMBER_OF_SPRITES 40)
+set(SPRITES_ORIGIN_ASM "${DISPLAY_END_ASM}")
+set(SPRITES_ORIGIN_C "${DISPLAY_END_C}")
+set(SPRITES_FINISH_ASM "${SPRITES_ORIGIN_ASM} + (\$${NUMBER_OF_SPRITES} * \$${SPRITE_SIZE_BYTES})")
+set(SPRITES_FINISH_C "${SPRITES_ORIGIN_C} + (0x${NUMBER_OF_SPRITES} * 0x${SPRITE_SIZE_BYTES})")
 
-configure_file(${PROJ_DIR}/src/constants/emulator_constants.h.in
-	       ${PROJ_DIR}/src/emulator/emulator_constants.h)
+set(TILESET_SPACE_START_ASM "\$${TILESET_ORIGIN}")# + (' ' * ${SIZEOF_TILE_ASM})")
 
-configure_file(${PROJ_DIR}/src/constants/assembler_constants.asm.in
-	       ${PROJ_DIR}/src/assembler/assembler_constants.asm)
+if(NOT CONST_IN_DIRECTORY)
+  set(CONST_IN_DIRECTORY ${PROJ_DIR}/z80_sdl_emulator/src/constants/)
+endif()
+
+if(NOT CONST_OUT_ASM)
+  set(CONST_OUT_ASM ${PROJ_DIR}/z80_sdl_emulator/src/assembler/assembler_constants.asm)
+endif()
+if(NOT CONST_OUT_EMU)
+  set(CONST_OUT_EMU ${PROJ_DIR}/z80_sdl_emulator/src/emulator/emulator_constants.h)
+endif()
+
+configure_file(${CONST_IN_DIRECTORY}/emulator_constants.h.in
+	       ${CONST_OUT_EMU})
+
+configure_file(${CONST_IN_DIRECTORY}/assembler_constants.asm.in
+	       ${CONST_OUT_ASM})

@@ -143,14 +143,37 @@ uint8_t read_percistence(void* context, uint16_t address)
     read(fd, char_value, sizeof(char_value[0]));
     return char_value[0];
 }
-        
+
+size_t s_time_event_pushed = 0;
+
+Uint32 emulator_timer(Uint32 interval, void * param)
+{
+    SDL_Event event;
+    SDL_UserEvent userevent;
+
+    userevent.type = SDL_USEREVENT;
+    userevent.code = 0;
+    userevent.data1 = 0;
+    userevent.data2 = param;
+
+    event.type = SDL_USEREVENT;
+    event.user = userevent;
+    
+    if(s_time_event_pushed == 0)
+    {
+        SDL_PushEvent(&event);
+        s_time_event_pushed = 1;
+    }
+    return(interval);
+}
+
 int main(int argc, char** argv)
 {
     int width = s_c_grid_width * s_c_tile_width;
     int height = s_c_grid_height * s_c_tile_height;
     int depth = 32;
     
-    int32_t error = SDL_Init(SDL_INIT_VIDEO);
+    int32_t error = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
     
     if(error == 0)
     {
@@ -174,6 +197,8 @@ int main(int argc, char** argv)
         
         uint32_t iterations = 0;
 
+        std::vector<Error> errors;
+        
         if(argc > 1)
         {   
             size_t s_c_number_of_sprites = 0x40;
@@ -194,19 +219,19 @@ int main(int argc, char** argv)
                                     , s_c_grid_width
                                     , s_c_number_of_sprites);
 
-            context.m_data_bus.add_section(0,context.m_instructions);
-            context.m_data_bus.add_section(s_c_display_orig,context.m_display);
-            context.m_display.add_to_data_bus( context.m_data_bus
-                                             , s_c_grid_iter_addr
-                                             , s_c_stdout_addr);
-            context.m_data_bus.add_section(s_c_sprite_table_start,context.m_sprites);
-            context.m_data_bus.add_section(s_c_tileset_orig,context.m_tileset);
+            errors.push_back(context.m_data_bus.add_section(0,context.m_instructions));
+            errors.push_back(context.m_data_bus.add_section(s_c_display_orig,context.m_display));
+            errors.push_back(context.m_display.add_to_data_bus( context.m_data_bus
+                                                              , s_c_grid_iter_addr
+                                                              , s_c_stdout_addr));
+            errors.push_back(context.m_data_bus.add_section(s_c_sprite_table_start,context.m_sprites));
+            errors.push_back(context.m_data_bus.add_section(s_c_tileset_orig,context.m_tileset));
             
             z80_emulator::Data_bus_RAM ram(s_c_ram_size);
             z80_emulator::Data_bus_RAM stack(s_c_stack_size);
             
-            context.m_data_bus.add_section(s_c_ram_orig, ram);
-            context.m_data_bus.add_section(s_c_stack_top, stack);
+            errors.push_back(context.m_data_bus.add_section(s_c_ram_orig, ram));
+            errors.push_back(context.m_data_bus.add_section(s_c_stack_top, stack));
             
             uint32_t percistence_file_descriptor = 0;
             
@@ -215,14 +240,18 @@ int main(int argc, char** argv)
             if(argc > 2)
             {
                 percistence_file_descriptor = open(argv[2], O_RDWR | O_CREAT);
-                context.m_data_bus.add_section(s_c_percistence_addr, perc_fd);
+                errors.push_back(context.m_data_bus.add_section(s_c_percistence_addr, perc_fd));
             }
             
             z80_emulator::Data_bus_integer<uint8_t> char_input;
             
-            context.m_data_bus.add_section(s_c_char_input_addr, char_input);
+            errors.push_back(context.m_data_bus.add_section(s_c_char_input_addr, char_input));
             
-            context.m_data_bus.add_section(s_c_char_input_addr, context.m_interrupt_data);
+            errors.push_back(context.m_data_bus.add_section(s_c_interrupt_addr, context.m_interrupt_data));
+
+            z80_emulator::Data_bus_integer<uint8_t> tick_data;
+            
+            errors.push_back(context.m_data_bus.add_section(s_c_tick_value_addr, tick_data));
 
             Z80 z80;
             z80.context = &context;
@@ -236,7 +265,25 @@ int main(int argc, char** argv)
             z80_power(&z80, TRUE);
             z80_reset(&z80);
 
+            SDL_AddTimer(500, emulator_timer, &context);
+            
             bool initializing = true;
+            
+            Error err = s_c_error_none;
+            uint32_t err_index = 0;
+            typedef std::vector<Error>::iterator errors_iter;
+            for(errors_iter iter = errors.begin(); iter != errors.end(); ++iter)
+            {
+                if(err == s_c_error_none)
+                {
+                    err = (*iter);
+                }
+                err_index++;
+                if((*iter) != s_c_error_none)
+                {
+                    printf("%d failed to add with %d", err_index, (*iter));
+                }
+            }
             
             while( continuing == TRUE
                 /*&& (iterations++ < 0xF000)*/)
@@ -244,7 +291,19 @@ int main(int argc, char** argv)
                 while(SDL_PollEvent(&event)) 
                 {
                     bool key_entered = false;
-                    if (event.type == SDL_QUIT) 
+                    if(event.type == SDL_USEREVENT)
+                    {
+                        s_time_event_pushed = 0;
+                        tick_data.set_integer(tick_data.get_integer() + 1);
+                        context.m_halted = false;
+                        z80_int(&z80, TRUE);
+                        while(!context.m_halted)
+                        {
+                            z80_run(&z80, 1);
+                        }
+                        screen_refresh(context);
+                    }
+                    else if (event.type == SDL_QUIT) 
                     {
                         printf("SDL_QUIT\n");
                         continuing = FALSE;
@@ -292,7 +351,7 @@ int main(int argc, char** argv)
                         z80_int(&z80, TRUE);
                         while(!context.m_halted)
                         {
-                            z80_run(&z80, 1);
+                            z80_run(&z80, 50);
                         }
                     }
                 }

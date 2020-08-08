@@ -3,6 +3,8 @@
 #include <z80_emulator/Tileset_definition.h>
 #include <catch2/catch.hpp>
 #include <z80_emulator/Tileset_definition.h> // Testing include guard
+#include <z80_emulator/Data_bus.h>
+#include <z80_emulator/Instruction_ROM.h>
 
 using namespace z80_emulator;
 
@@ -163,4 +165,29 @@ TEST_CASE( "Tileset_definition_test.nibble_tileset", "nibble_tileset" )
     }
 
     c.write_tileset_to_file("test_files/nibble_tileset_test.png");
+}
+
+TEST_CASE( "Tileset_definition_test.from_read_rom", "From read rom")
+{
+    std::string filename = "test_files/tileset_quad_color.bin";
+    size_t rom_binary_size = 0x1000;
+    Instruction_ROM rom(rom_binary_size);
+    rom.read_binary(filename.c_str());
+    Data_bus db;
+    db.add_section(' ' * 0x10, rom);
+    
+    Tileset_metadata metadata;
+    metadata.m_tile_width_pixels = 0x8;
+    metadata.m_tile_height_pixels = 0x8;
+    metadata.m_tile_color_depth = 0x2;
+    memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
+    metadata.m_pallete[3] = 0xFF000000;
+    metadata.m_pallete[2] = 0xFF224422;
+    metadata.m_pallete[1] = 0xFF448844;
+    metadata.m_pallete[0] = 0xFF66CC66;
+    
+    Tileset_definition c(metadata);
+    c.set_from_databus(db, 0x0, rom_binary_size);
+    
+    c.write_tileset_to_file("test_files/quad_tileset_from_bin_test.png");
 }
