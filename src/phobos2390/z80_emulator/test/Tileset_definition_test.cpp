@@ -16,6 +16,7 @@ TEST_CASE( "Tileset_definition_test", "stack" )
     metadata.m_tile_color_depth = 0x1;
     memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
     Tileset_definition c(metadata);
+    REQUIRE( c.get_section_size() == 0x800 );
 }
 
 TEST_CASE( "Tileset_definition_test.binary_tileset", "binary_tileset" )
@@ -60,6 +61,8 @@ TEST_CASE( "Tileset_definition_test.binary_tileset", "binary_tileset" )
     c.set_data(addr_value++, 0b11111100);
 
     c.write_tileset_to_file("test_files/binary_tileset_test.png");
+    
+    REQUIRE( c.get_section_size() == 0x800 );
 }
 
 TEST_CASE( "Tileset_definition_test.quad_tileset", "quad_tileset" )
@@ -117,6 +120,8 @@ TEST_CASE( "Tileset_definition_test.quad_tileset", "quad_tileset" )
 
 
     c.write_tileset_to_file("test_files/quad_tileset_test.png");
+    
+    REQUIRE( c.get_section_size() == 0x1000 );
 }
 
 TEST_CASE( "Tileset_definition_test.nibble_tileset", "nibble_tileset" )
@@ -165,6 +170,8 @@ TEST_CASE( "Tileset_definition_test.nibble_tileset", "nibble_tileset" )
     }
 
     c.write_tileset_to_file("test_files/nibble_tileset_test.png");
+
+    REQUIRE( c.get_section_size() == 0x2000 );
 }
 
 TEST_CASE( "Tileset_definition_test.from_read_rom", "From read rom")
@@ -190,4 +197,6 @@ TEST_CASE( "Tileset_definition_test.from_read_rom", "From read rom")
     c.set_from_databus(db, 0x0, rom_binary_size);
     
     c.write_tileset_to_file("test_files/quad_tileset_from_bin_test.png");
+
+    REQUIRE( c.get_section_size() == 0x1000 );
 }

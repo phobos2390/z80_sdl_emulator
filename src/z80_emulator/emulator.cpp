@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <emulator/emulator_constants.h>
+#include <z80_emulator/emulator_constants.h>
 #include <z80_emulator/Data_bus.h>
 #include <z80_emulator/Data_bus_RAM.h>
 #include <z80_emulator/Data_bus_integer.h>
@@ -18,6 +18,7 @@
 #include <z80_emulator/Grid_display.h>
 #include <z80_emulator/Sprite_table.h>
 #include <z80_emulator/Tileset_definition.h>
+#include <algorithm>
 
 static bool continuing;
 //static uint8_t interrupt_data;
@@ -34,6 +35,7 @@ struct emulator_context
     z80_emulator::Sprite_table m_sprites;
     z80_emulator::Tileset_definition m_tileset;
     z80_emulator::Data_bus_integer<uint8_t> m_interrupt_data;
+    std::vector<uint16_t> m_instruction_addresses;
     
     emulator_context( uint16_t rom_size
                     , z80_emulator::Tileset_metadata metadata
@@ -48,6 +50,7 @@ struct emulator_context
     , m_sprites(sprite_count)
     , m_tileset(metadata)
     , m_interrupt_data()
+    , m_instruction_addresses()
     {
     }
 };
@@ -84,12 +87,33 @@ void write_cb(void* context, zuint16 address, zuint8 value)
 {
     emulator_context* p_emu_context = static_cast<emulator_context*>(context);
     p_emu_context->m_data_bus.write(address, value);
+    if(0x9000 <= address && address <= 0x9007)
+    {
+        printf("writing %x: %x\n", address, value);
+        fflush(stdout); 
+    }
 }
 
 zuint8 read_cb(void* context, zuint16 address)
 {
     emulator_context* p_emu_context = static_cast<emulator_context*>(context);
     uint8_t ret_val = p_emu_context->m_data_bus.read(address);
+    if((0 < address) && (address < p_emu_context->m_instructions.get_section_size())
+     &&( std::find( p_emu_context->m_instruction_addresses.begin()
+                  , p_emu_context->m_instruction_addresses.end()
+                  , address)
+      != p_emu_context->m_instruction_addresses.end()))
+    {
+        //printf("%x: %s\n", address, p_emu_context->m_instructions.address_to_string(address).c_str());
+        //fflush(stdout); 
+    }
+    if(0x9000 <= address && address <= 0x9007)
+    {
+        printf("Reading %x: %x\n", address, ret_val);
+        fflush(stdout); 
+    }
+//    printf("Read addr %x: %x\n", address, ret_val);
+//    fflush(stdout); 
     return ret_val;
 }
 
@@ -169,7 +193,7 @@ Uint32 emulator_timer(Uint32 interval, void * param)
 
 int main(int argc, char** argv)
 {
-    int width = s_c_grid_width * s_c_tile_width;
+    int width = s_c_grid_width * s_c_tile_width_pixels;
     int height = s_c_grid_height * s_c_tile_height;
     int depth = 32;
     
@@ -201,21 +225,22 @@ int main(int argc, char** argv)
         
         if(argc > 1)
         {   
-            size_t s_c_number_of_sprites = 0x40;
-            size_t s_c_sprite_table_start = 0xB000;
-            size_t s_c_percistence_addr = 0x80A0;
-            
             z80_emulator::Tileset_metadata metadata;
-            metadata.m_tile_width_pixels = s_c_tile_width;
+            metadata.m_tile_width_pixels = s_c_tile_width_pixels;
             metadata.m_tile_height_pixels = s_c_tile_height;
             metadata.m_tile_color_depth = s_c_tile_depth;
             memset(metadata.m_pallete, 0, sizeof(metadata.m_pallete));
-            if(s_c_tile_depth < 0x8)
+            if((s_c_tile_depth == 0x4) || (s_c_tile_depth == 0x2))
             {
                 for(uint32_t i = 0; i < (s_c_tile_depth * s_c_tile_depth); i++)
                 {
                     metadata.m_pallete[i] = s_c_pallete[i];
                 }
+            }
+            else if(s_c_tile_depth == 0x1)
+            {
+                metadata.m_pallete[0] = s_c_pallete[0];
+                metadata.m_pallete[1] = s_c_pallete[1];
             }
             
             emulator_context context( s_c_memory_size
@@ -225,6 +250,8 @@ int main(int argc, char** argv)
                                     , s_c_number_of_sprites);
 
             errors.push_back(context.m_data_bus.add_section(0,context.m_instructions));
+            errors.push_back(context.m_instructions.read_binary(argv[1]));
+            context.m_instructions.parse_instruction_list(context.m_instruction_addresses);
             errors.push_back(context.m_data_bus.add_section(s_c_display_orig,context.m_display));
             errors.push_back(context.m_display.add_to_data_bus( context.m_data_bus
                                                               , s_c_grid_iter_addr
@@ -236,7 +263,7 @@ int main(int argc, char** argv)
             z80_emulator::Data_bus_RAM stack(s_c_stack_size);
             
             errors.push_back(context.m_data_bus.add_section(s_c_ram_orig, ram));
-            errors.push_back(context.m_data_bus.add_section(s_c_stack_top, stack));
+            errors.push_back(context.m_data_bus.add_section(s_c_stack_top - s_c_stack_size, stack));
             
             uint32_t percistence_file_descriptor = 0;
             
@@ -286,7 +313,7 @@ int main(int argc, char** argv)
                 err_index++;
                 if((*iter) != s_c_error_none)
                 {
-                    printf("%d failed to add with %d", err_index, (*iter));
+                    printf("%d failed to add with %d\n", err_index, (*iter));
                 }
             }
             
@@ -376,11 +403,14 @@ int main(int argc, char** argv)
                 }
                 if(initializing)
                 {
-                    screen_refresh(context);
+                    //screen_refresh(context);
                     SDL_RenderPresent(p_sdl_renderer);
                     SDL_Delay(10);
                 }
             }
+            
+            IMG_SavePNG(context.m_tileset.get_tileset_surface(), "tileset.png");
+            context.m_tileset.write_tileset_to_file("tileset_square.png");
         }
         SDL_DestroyRenderer(p_sdl_renderer);
         SDL_DestroyWindow(window);

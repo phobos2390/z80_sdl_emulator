@@ -17,19 +17,19 @@ TEST_CASE( "Data_bus_integer_test.set_integer", "set_integer" )
     Data_bus_integer<uint32_t> c;
     c.set_integer(set_value_int);
     REQUIRE( set_value_int == c.get_integer() );
-    REQUIRE( 0x12 == c.get_data(0) );
-    REQUIRE( 0x34 == c.get_data(1) );
-    REQUIRE( 0x56 == c.get_data(2) );
-    REQUIRE( 0x78 == c.get_data(3) );
+    REQUIRE( 0x12 == c.get_data(3) );
+    REQUIRE( 0x34 == c.get_data(2) );
+    REQUIRE( 0x56 == c.get_data(1) );
+    REQUIRE( 0x78 == c.get_data(0) );
 }
 
 TEST_CASE( "Data_bus_integer_test.get_integer", "get_integer" )
 {
     uint32_t expected_get_value_int = 0x12345678;
     Data_bus_integer<uint32_t> c;
-    c.set_data(0,0x12);
-    c.set_data(1,0x34);
-    c.set_data(2,0x56);
-    c.set_data(3,0x78);
+    c.set_data(3,0x12);
+    c.set_data(2,0x34);
+    c.set_data(1,0x56);
+    c.set_data(0,0x78);
     REQUIRE( expected_get_value_int == c.get_integer() );
 }

@@ -34,8 +34,9 @@ struct Data_bus_integer<INT_TYPE>::Impl
         size_t single_shift_value = 0x8;
         for(int i = 0; i < sizeof(m_value); i++)
         {
+            int r = sizeof(m_value) - 1 - i;
             ret_value = ret_value << single_shift_value;
-            ret_value |= m_value[i];
+            ret_value |= m_value[r];
         }
         return ret_value;
     }
@@ -48,7 +49,7 @@ struct Data_bus_integer<INT_TYPE>::Impl
         for(int i = 0; i < sizeof(m_value); i++)
         {
             int r = sizeof(m_value) - 1 - i;
-            m_value[i] = (mask_value & value) >> (r * single_shift_value);
+            m_value[r] = (mask_value & value) >> (r * single_shift_value);
             mask_value = mask_value >> single_shift_value;
         }
     }
@@ -100,7 +101,7 @@ INT_TYPE Data_bus_integer<INT_TYPE>::get_integer()
 template<typename INT_TYPE>
 void Data_bus_integer<INT_TYPE>::set_integer(INT_TYPE value)
 {
-        m_p_impl->set_int_value(value);
+    m_p_impl->set_int_value(value);
 }
 
 }

@@ -28,8 +28,7 @@ public:
     , m_tile_width_bytes((metadata.m_tile_width_pixels / s_c_bits_in_byte) * metadata.m_tile_color_depth)
     , m_tile_size_bytes(m_tile_width_bytes * metadata.m_tile_height_pixels)
     , m_tileset_total_size( s_c_total_characters
-                          * m_tile_size_bytes
-                          * metadata.m_tile_color_depth)
+                          * m_tile_size_bytes)
     , m_p_character_set(new uint8_t[m_tileset_total_size])
     , m_p_sdl_tileset_picture(SDL_CreateRGBSurface( 0
                                                   , ( s_c_total_characters
@@ -272,6 +271,13 @@ uint8_t Tileset_definition::get_data(uint16_t address)
 void Tileset_definition::set_data(uint16_t address, uint8_t value)
 {
     m_p_impl->m_p_character_set[address] = value;
+
+    uint32_t character = address / m_p_impl->m_tile_size_bytes;
+    uint32_t character_offset = character * m_p_impl->m_metadata.m_tile_width_pixels;
+    uint32_t byte_of_char = address % m_p_impl->m_tile_size_bytes;
+    uint32_t pix_column = byte_of_char % m_p_impl->m_tile_width_bytes;
+    uint32_t pix_row = byte_of_char / m_p_impl->m_tile_width_bytes;
+    m_p_impl->set_pixel_byte(value, pix_column, pix_row, character_offset);
 }
 
 SDL_Surface* Tileset_definition::get_tileset_surface()

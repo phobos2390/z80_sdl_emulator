@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#include <iostream>
 
 namespace z80_emulator
 {
@@ -38,7 +39,7 @@ public:
             uint16_t old_section_end = bus_sect.first
                                      + bus_sect.second.get_section_size();
             if( ((bus_sect.first <= origin) && (origin < old_section_end))
-             || ((bus_sect.first <= new_section_end) && (new_section_end <= old_section_end))
+             || ((bus_sect.first < new_section_end) && (new_section_end < old_section_end))
              || ((origin <= bus_sect.first) && ( bus_sect.first < new_section_end))
                     )
             {
@@ -90,6 +91,10 @@ public:
             uint16_t section_address = address - p_bus_section->first;
             value = p_bus_section->second.get_data(section_address);
         } 
+        else
+        {
+            std::cout << "Attempted invalid read: " << std::hex << address << ": " << value << "\n";
+        }
         return value;
     }
 
@@ -102,6 +107,10 @@ public:
             uint16_t section_address = address - p_bus_section->first;
             p_bus_section->second.set_data(section_address, value);
         } 
+        else
+        {
+            std::cout << "Attempted invalid write: " << std::hex << address << ": " << value << "\n";
+        }
     }
 };
 

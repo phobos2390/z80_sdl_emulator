@@ -62,6 +62,8 @@ public:
     
     void parse_instruction_list(std::vector<uint16_t>& instruction_list);
     
+    std::string address_to_string(uint16_t address);
+    
     Instruction_ROM& add_instruction(const char* label);
 
     Instruction_ROM& add_instruction(const char* label, uint8_t direct);

@@ -513,7 +513,79 @@ public:
     {
         m_fill_size = add_instruction_binary_data(new_instruction, m_fill_size);
     }
-};  
+    
+    std::string address_to_string(uint16_t address)
+    {
+        std::string ret_string = "";
+        std::string instruction_string = "";
+        uint8_t opcode = m_instruction_data.get_data(address);
+        uint16_t size = 0;
+        uint16_t direct_addr = 0;
+        if(opcode == 0xCB)
+        {
+            instruction_string = CB_instruction_names[m_instruction_data.get_data(address + 1)];
+            size = opcode_sizes[opcode];
+            direct_addr = 0;
+        }
+        else if(opcode == 0xDD)
+        {
+            if(m_instruction_data.get_data(address + 1) == 0xCB)
+            {
+                instruction_string = IX_bit_instructions_names[m_instruction_data.get_data(address + 3)];
+            }
+            else
+            {
+                instruction_string = IX_bit_instructions_names[m_instruction_data.get_data(address + 1)];
+            }
+            size = opcode_sizes_I[m_instruction_data.get_data(address + 1)];
+            direct_addr = address + 2;
+        }
+        else if(opcode == 0xFD)
+        {
+            if(m_instruction_data.get_data(address + 1) == 0xCB)
+            {
+                instruction_string = IY_bit_instructions_names[m_instruction_data.get_data(address + 3)];
+            }
+            else
+            {
+                instruction_string = IY_bit_instructions_names[m_instruction_data.get_data(address + 1)];
+            }
+            size = opcode_sizes_I[m_instruction_data.get_data(address + 1)];
+            direct_addr = address + 2;
+        }
+        else if(opcode == 0xED)
+        {
+            instruction_string = ED_instruction_names[m_instruction_data.get_data(address + 1)];
+            size = opcode_sizes_ED[m_instruction_data.get_data(address + 1)];
+            direct_addr = address + 2;
+        }
+        else
+        {
+            instruction_string = instruction_names[opcode];
+            size = opcode_sizes[m_instruction_data.get_data(address + 1)];
+            direct_addr = address + 1;
+        }
+        if(size == 1)
+        {
+            instruction single_byte(instruction_string.c_str());
+            ret_string = single_byte.to_string();
+        }
+        else if(size == 2)
+        {
+            instruction double_byte(instruction_string.c_str(), m_instruction_data.get_data(direct_addr));
+            ret_string = double_byte.to_string();
+        }
+        else if(size == 3)
+        {
+            instruction triple_byte( instruction_string.c_str()
+                                   , m_instruction_data.get_data(direct_addr)
+                                   , m_instruction_data.get_data(direct_addr + 1));
+
+            ret_string = triple_byte.to_string();
+        }
+        return ret_string;
+    }
+};
 
 Instruction_ROM::Instruction_ROM(uint16_t instruction_size)
     :m_p_impl(new Impl(instruction_size))
@@ -586,6 +658,11 @@ Error Instruction_ROM::read_binary(const char* p_filename)
         }
     }
     return return_error;
+}
+
+std::string Instruction_ROM::address_to_string(uint16_t address)
+{
+    return m_p_impl->address_to_string(address);
 }
 
 Instruction_ROM& Instruction_ROM::add_instruction(const char* label)
