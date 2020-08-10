@@ -751,9 +751,8 @@ int main(int argc, char** argv)
                         z80_int(&z80, TRUE);
                         while(halted == FALSE)
                         {
-                            z80_run(&z80, 1);
+                            z80_run(&z80, 50);
                         }
-                        s_time_event_pushed = 0;
                     }
                 }
                 if(halted == FALSE)
