@@ -1,9 +1,9 @@
 [submodule "z"]
 	path = z
-	url = git@github.com:redcode/z.git
+	url = https://github.com/phobos2390/z_fork.git
 [submodule "z80"]
 	path = z80
-	url = git@github.com:redcode/z80.git
+	url = https://github.com/phobos2390/z80.git
 [submodule "catch2"]
 	path = catch2
 	url = git@github.com:catchorg/catch2.git

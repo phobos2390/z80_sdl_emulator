@@ -1,0 +1,17 @@
+{
+    "makefile.makePath": "C:\\cygwin64\\bin\\make.exe",
+    "makefile.configurations": [
+        {
+            "build": "",
+            "name": "Unnamed configuration 1"
+        },
+        {
+            "lib": "",
+            "name": "Unnamed configuration 2"
+        },
+        {
+            "test": "",
+            "name": "Unnamed configuration 3"
+        }
+    ]
+}

@@ -307,6 +307,7 @@ int main(int argc, char** argv)
                             z80_run(&z80, 1);
                         }
                         screen_refresh(context);
+                        SDL_Delay(2);
                     }
                     else if (event.type == SDL_QUIT) 
                     {
@@ -376,9 +377,8 @@ int main(int argc, char** argv)
                 }
                 if(initializing)
                 {
-                    screen_refresh(context);
-                    SDL_RenderPresent(p_sdl_renderer);
-                    SDL_Delay(10);
+//                    screen_refresh(context);
+//                    SDL_RenderPresent(p_sdl_renderer);
                 }
             }
         }
