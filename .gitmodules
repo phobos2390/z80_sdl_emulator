@@ -7,3 +7,6 @@
 [submodule "catch2"]
 	path = catch2
 	url = https://github.com/catchorg/catch2.git
+[submodule "spasm-ng"]
+	path = spasm-ng
+	url = https://github.com/phobos2390/spasm-ng.git
